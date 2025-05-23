@@ -1,13 +1,28 @@
 import pygame
+from settings_menu import SettingsMenu # Importe a nova classe
+import os # Importar para usar os.path.join
+
+# Definir o caminho para a fonte
+FONT_PATH = os.path.join('assets', 'fonts', 'BigBlueTermPlusNerdFont-Regular.ttf') # Verifique o nome exato do arquivo
+
 
 class MainMenu:
     def __init__(self, win, audio_manager):
         self.win = win
         self.audio = audio_manager
-        self.options = ["Iniciar Jogo", "Sair"]
+        # Adicione "Configurações" às opções
+        self.options = ["Iniciar Jogo", "Configurações", "Sair"]
         self.selected_index = 0
-        self.font_title = pygame.font.SysFont('comicsans', 60)
-        self.font_options = pygame.font.SysFont('comicsans', 40)
+        
+        # Usar pygame.font.Font
+        try:
+            self.font_title = pygame.font.Font(FONT_PATH, 60)
+            self.font_options = pygame.font.Font(FONT_PATH, 40)
+        except FileNotFoundError:
+            print(f"Erro: Fonte não encontrada em {FONT_PATH}. Usando fonte padrão.")
+            self.font_title = pygame.font.SysFont('comicsans', 60)
+            self.font_options = pygame.font.SysFont('comicsans', 40)
+            
         self.bg_color = (0, 0, 0)
         self.text_color = (255, 255, 255)
         self.selected_color = (255, 215, 0)  # Amarelo ouro para seleção
@@ -15,8 +30,9 @@ class MainMenu:
         self.title_pos = (win.get_width() // 2, 150)  # Centralizado horizontalmente
         self.option_start_pos = (win.get_width() // 2, 300)  # Centralizado
         
-        # Inicia a música do menu
-        self.audio.play_music('menu')
+        # Inicia a música do menu (garantindo que só toque uma vez)
+        if not self.audio.is_music_playing() or self.audio.current_track != 'menu':
+            self.audio.play_music('menu')
     
     def draw(self, surface):
         surface.fill(self.bg_color)
@@ -42,15 +58,18 @@ class MainMenu:
         clock = pygame.time.Clock()
         running = True
         
+        # Instancie o SettingsMenu aqui para que possa ser chamado
+        settings_menu = SettingsMenu(self.win, self.audio) 
+
         while running:
             clock.tick(60)
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                    return False
+                    return False # Retorna False para sair do programa
                 
-                if event.type == pygame.KEYDOWN:
+                if event.type == pygame.KEYDOWN: # Verifique se o evento é de tecla pressionada
                     if event.key == pygame.K_UP:
                         self.selected_index = (self.selected_index - 1) % len(self.options)
                         self.audio.play_sound('move')
@@ -60,15 +79,29 @@ class MainMenu:
                     elif event.key == pygame.K_RETURN:
                         self.audio.play_sound('drop')
                         if self.selected_index == 0:  # Iniciar Jogo
-                            self.audio.stop_music()
+                            self.audio.stop_music() # Para a música do menu
                             main_function(self.win)  # Executa a função do jogo principal
-                            self.audio.play_music('menu')  # Volta ao menu após o jogo
-                        elif self.selected_index == 1:  # Sair
+                            # Após o jogo terminar (e retornar), verifica se a música do menu deve tocar novamente
+                            if not self.audio.is_music_playing() or self.audio.current_track != 'menu':
+                                self.audio.play_music('menu')
+                        elif self.selected_index == 1: # Configurações (novo)
+                            # Ao entrar nas configurações, pausa a música do menu (se estiver tocando)
+                            self.audio.pause_music() 
+                            action = settings_menu.run(self.win) # Chama o menu de configurações
+                            # Ao sair das configurações, despausa a música do menu (se estava tocando)
+                            if action == "back":
+                                self.audio.unpause_music()
+                            elif action == "quit": # Se o usuário sair do jogo pelo menu de configurações
+                                running = False
+                                return False
+
+                        elif self.selected_index == 2:  # Sair (índice ajustado)
                             running = False
+                            return False # Retorna False para sair do programa
                     elif event.key == pygame.K_ESCAPE:
                         running = False
+                        return False # Retorna False para sair do programa
             
             self.draw(self.win)
         
-        pygame.quit()
         return False

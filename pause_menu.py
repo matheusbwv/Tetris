@@ -1,6 +1,10 @@
 import pygame
+import os # Importar para usar os.path.join
 
 pygame.font.init()
+
+# Definir o caminho para a fonte
+FONT_PATH = os.path.join('assets', 'fonts', 'BigBlueTermPlusNerdFont-Regular.ttf') # Verifique o nome exato do arquivo
 
 
 class PauseMenu:
@@ -20,8 +24,15 @@ class PauseMenu:
         self.selected_index = 0
 
         # Configurações de fonte e cores
-        self.font_title = pygame.font.SysFont('comicsans', 70, bold=True)
-        self.font_options = pygame.font.SysFont('comicsans', 45)
+        # Usar pygame.font.Font
+        try:
+            self.font_title = pygame.font.Font(FONT_PATH, 70)
+            self.font_options = pygame.font.Font(FONT_PATH, 45)
+        except FileNotFoundError:
+            print(f"Erro: Fonte não encontrada em {FONT_PATH}. Usando fonte padrão.")
+            self.font_title = pygame.font.SysFont('comicsans', 70, bold=True)
+            self.font_options = pygame.font.SysFont('comicsans', 45)
+
         self.bg_color = (0, 0, 0, 180)  # Preto com mais transparência
         self.text_color = (255, 255, 255)
         self.selected_color = (255, 255, 0)  # Amarelo mais vibrante
@@ -98,7 +109,7 @@ class PauseMenu:
                 if event.type == pygame.QUIT:
                     return "quit"
 
-                if event.type == pygame.KEYDOWN:
+                if event.type == pygame.KEYDOWN: # Garante que só verifica event.key em eventos KEYDOWN
                     if event.key == pygame.K_UP:
                         self.selected_index = (
                             self.selected_index - 1) % len(self.options)

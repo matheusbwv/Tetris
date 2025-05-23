@@ -6,7 +6,7 @@ class AudioManager:
         pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
         self.sounds = {}
         self.music_tracks = {}
-        self.music_volume = 0.5
+        self.music_volume = 0.2  # ALTERADO AQUI: Volume inicial da música para 20%
         self.effects_volume = 0.7
         self.current_track = None
         self.music_paused = False
@@ -45,7 +45,7 @@ class AudioManager:
             if track_name != self.current_track or not pygame.mixer.music.get_busy():
                 try:
                     pygame.mixer.music.load(self.music_tracks[track_name])
-                    pygame.mixer.music.set_volume(self.music_volume)
+                    pygame.mixer.music.set_volume(self.music_volume) # Define o volume da música ao tocar
                     pygame.mixer.music.play(loops=loops, fade_ms=fade_ms)
                     self.current_track = track_name
                     self.music_paused = False
